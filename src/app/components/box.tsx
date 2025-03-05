@@ -10,6 +10,7 @@ import {
   MoveHorizontal,
   MoveVertical,
   Bomb,
+  Magnet,
 } from "lucide-react";
 
 const boxStyle = (type: string) => {
@@ -27,13 +28,38 @@ const boxStyle = (type: string) => {
     case "yellow":
       return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-yellow-normal)] cursor-pointer shadow-[0_4px_0_var(--box-yellow-dark)]";
     case "v-rocket":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
     case "h-rocket":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
     case "bomb":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-gray-normal)] cursor-pointer shadow-[0_4px_0_var(--box-gray-dark)]";
+    case "red-magnet":
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-red-normal)] cursor-pointer shadow-[0_4px_0_var(--box-red-dark)]";
+    case "green-magnet":
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-green-normal)] cursor-pointer shadow-[0_4px_0_var(--box-green-dark)]";
+    case "blue-magnet":
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-blue-normal)] cursor-pointer shadow-[0_4px_0_var(--box-blue-dark)]";
+    case "pink-magnet":
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-pink-normal)] cursor-pointer shadow-[0_4px_0_var(--box-pink-dark)]";
+    case "purple-magnet":
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-purple-normal)] cursor-pointer shadow-[0_4px_0_var(--box-purple-dark)]";
+    case "yellow-magnet":
+      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-yellow-normal)] cursor-pointer shadow-[0_4px_0_var(--box-yellow-dark)]";
   }
   return "";
+};
+
+const frameStyle = (type: string) => {
+  if (
+    type === "red" ||
+    type === "green" ||
+    type === "blue" ||
+    type === "pink" ||
+    type === "purple" ||
+    type === "yellow"
+  )
+    return "absolute top-[-2px] left-[-2px] w-11 h-12 border-2 border-white cursor-pointer rounded-lg";
+  return "absolute top-[-2px] left-[-2px] w-11 h-12 border-2 border-white cursor-pointer rounded-full";
 };
 
 interface BoxProps {
@@ -106,11 +132,23 @@ export const Box: React.FC<BoxProps> = ({
           case "h-rocket":
             return <MoveHorizontal color="var(--box-black-dark)" size={20} />;
           case "bomb":
-            return <Bomb color="var(--box-black-dark)" size={20} />;
+            return <Bomb color="var(--box-gray-dark)" size={20} />;
+          case "red-magnet":
+            return <Magnet color="var(--box-red-dark)" size={20} />;
+          case "green-magnet":
+            return <Magnet color="var(--box-green-dark)" size={20} />;
+          case "blue-magnet":
+            return <Magnet color="var(--box-blue-dark)" size={20} />;
+          case "yellow-magnet":
+            return <Magnet color="var(--box-yellow-dark)" size={20} />;
+          case "pink-magnet":
+            return <Magnet color="var(--box-pink-dark)" size={20} />;
+          case "purple-magnet":
+            return <Magnet color="var(--box-purple-dark)" size={20} />;
         }
       })()}
       <motion.button
-        className="rounded-lg absolute top-[-2px] left-[-2px] w-11 h-12 border-2 border-white cursor-pointer"
+        className={frameStyle(type)}
         animate={frameControls}
         initial={{ opacity: 0 }}
       />

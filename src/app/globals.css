@@ -41,8 +41,10 @@
     --box-yellow-dark: #b18618;
     --box-purple-normal: #a855f7;
     --box-purple-dark: #4b1c77;
-    --box-black-normal: #4a5565;
-    --box-black-dark: #242931;
+    --box-black-normal: #677ea1;
+    --box-black-dark: #313a47;
+    --box-gray-normal: #5b9e9b;
+    --box-gray-dark: #356e6c;
   }
 }
 
