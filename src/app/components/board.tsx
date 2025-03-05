@@ -16,15 +16,35 @@ const TYPES = [
   "bomb",
   "v-rocket",
   "h-rocket",
+  "red-magnet",
+  "blue-magnet",
+  "green-magnet",
+  "yellow-magnet",
+  "purple-magnet",
+  "pink-magnet",
 ];
 
 const BOARD_SIZE = 8;
+
+const isBomb = (type: string) => {
+  if (
+    type === "red" ||
+    type === "blue" ||
+    type === "green" ||
+    type === "yellow" ||
+    type === "purple" ||
+    type === "pink"
+  )
+    return false;
+  return true;
+};
 
 export const Board = () => {
   const boxTypes = useRef<string[][]>([]);
   const boxStates = useRef<string[][]>([]);
   const boxOffsets = useRef<number[][]>([]);
-  const selectedBoxes = useRef<[number, number][]>([]);
+  const selectedBoxes = useRef<[number, number, string][]>([]);
+  const currentBox = useRef<[number, number, string]>([0, 0, ""]);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [state, setState] = useState<string>("");
 
@@ -72,37 +92,121 @@ export const Board = () => {
 
   const findConnectedBoxes = (row: number, col: number, type: string) => {
     const visited = new Set<string>();
-    const connected: [number, number][] = [];
+    const connected: [number, number, string][] = [];
 
-    const dfs = (r: number, c: number) => {
-      // Check if out of bounds or already visited or different color
-      if (
-        r < 0 ||
-        r >= BOARD_SIZE ||
-        c < 0 ||
-        c >= BOARD_SIZE ||
-        visited.has(`${r},${c}`) ||
-        boxTypes.current[r][c] !== type
-      ) {
-        return;
-      }
+    if (!isBomb(type)) {
+      const dfs = (r: number, c: number) => {
+        // Check if out of bounds or already visited or different color
+        if (
+          r < 0 ||
+          r >= BOARD_SIZE ||
+          c < 0 ||
+          c >= BOARD_SIZE ||
+          visited.has(`${r},${c}`) ||
+          boxTypes.current[r][c] !== type
+        ) {
+          return;
+        }
 
-      visited.add(`${r},${c}`);
-      connected.push([r, c]);
+        visited.add(`${r},${c}`);
+        connected.push([r, c, boxTypes.current[r][c]]);
 
-      // Check all four directions
-      dfs(r + 1, c);
-      dfs(r - 1, c);
-      dfs(r, c + 1);
-      dfs(r, c - 1);
-    };
+        // Check all four directions
+        dfs(r + 1, c);
+        dfs(r - 1, c);
+        dfs(r, c + 1);
+        dfs(r, c - 1);
+      };
 
-    dfs(row, col);
+      dfs(row, col);
+    } else {
+      const dfs = (r: number, c: number) => {
+        // Check if out of bounds or already visited or different color
+        if (
+          r < 0 ||
+          r >= BOARD_SIZE ||
+          c < 0 ||
+          c >= BOARD_SIZE ||
+          visited.has(`${r},${c}`) ||
+          !isBomb(boxTypes.current[r][c])
+        ) {
+          return;
+        }
+
+        visited.add(`${r},${c}`);
+        connected.push([r, c, boxTypes.current[r][c]]);
+
+        // Check all four directions
+        dfs(r + 1, c);
+        dfs(r - 1, c);
+        dfs(r, c + 1);
+        dfs(r, c - 1);
+      };
+
+      dfs(row, col);
+
+      const newconnected: [number, number, string][] = [];
+
+      connected.forEach(([row, col, newtype]) => {
+        console.log(newtype);
+        if (newtype === "bomb") {
+          for (let r = row - 1; r <= row + 1; r++)
+            for (let c = col - 1; c <= col + 1; c++)
+              if (
+                r >= 0 &&
+                r < BOARD_SIZE &&
+                c >= 0 &&
+                c < BOARD_SIZE &&
+                !visited.has(`${r},${c}`)
+              ) {
+                visited.add(`${r},${c}`);
+                newconnected.push([r, c, boxTypes.current[r][c]]);
+              }
+        }
+        if (newtype === "h-rocket") {
+          const r = row;
+          for (let c = 0; c < BOARD_SIZE; c++)
+            if (
+              r >= 0 &&
+              r < BOARD_SIZE &&
+              c >= 0 &&
+              c < BOARD_SIZE &&
+              !visited.has(`${r},${c}`)
+            ) {
+              visited.add(`${r},${c}`);
+              newconnected.push([r, c, boxTypes.current[r][c]]);
+            }
+        }
+        if (newtype === "v-rocket") {
+          const c = col;
+          for (let r = 0; r < BOARD_SIZE; r++)
+            if (
+              r < 0 ||
+              r >= BOARD_SIZE ||
+              c < 0 ||
+              c >= BOARD_SIZE ||
+              !visited.has(`${r},${c}`)
+            ) {
+              visited.add(`${r},${c}`);
+              newconnected.push([r, c, boxTypes.current[r][c]]);
+            }
+        }
+      });
+
+      newconnected.forEach((connection) => {
+        connected.push(connection);
+      });
+    }
     return connected;
   };
 
   useEffect(() => {
     if (state === "explode") {
+      setTimeout(() => {
+        addItems();
+        setState("item");
+      }, 300);
+    } else if (state === "item") {
       setTimeout(() => {
         dropBoxes();
         setState("drop");
@@ -114,14 +218,15 @@ export const Board = () => {
         setState("normal");
         setIsAnimating(false);
         selectedBoxes.current = [];
-      }, 100);
+      }, 300);
     }
   }, [state]);
 
   const selectBoxes = (row: number, col: number) => {
     const type = boxTypes.current[row][col];
     const connectedBoxes = findConnectedBoxes(row, col, type);
-    if (connectedBoxes.length >= 2) {
+    if (connectedBoxes.length >= 2 || isBomb(type)) {
+      currentBox.current = [row, col, type];
       const newBoxStates = Array(BOARD_SIZE)
         .fill(null)
         .map(() =>
@@ -153,6 +258,32 @@ export const Board = () => {
     boxStates.current = newBoxStates;
     setIsAnimating(true);
     setState("explode");
+  };
+
+  const addItems = () => {
+    const [row, col, type] = currentBox.current;
+    const newBoxTypes = [...boxTypes.current];
+    const newBoxStates = [...boxStates.current];
+    if (isBomb(type)) {
+      return;
+    }
+    if (selectedBoxes.current.length >= 9) {
+      newBoxStates[row][col] = "normal";
+      if (type === "red") newBoxTypes[row][col] = "red-magnet";
+      if (type === "blue") newBoxTypes[row][col] = "blue-magnet";
+      if (type === "green") newBoxTypes[row][col] = "green-magnet";
+      if (type === "yellow") newBoxTypes[row][col] = "yellow-magnet";
+      if (type === "purple") newBoxTypes[row][col] = "purple-magnet";
+      if (type === "pink") newBoxTypes[row][col] = "pink-magnet";
+    } else if (selectedBoxes.current.length >= 7) {
+      newBoxStates[row][col] = "normal";
+      newBoxTypes[row][col] = "bomb";
+    } else if (selectedBoxes.current.length >= 5) {
+      newBoxStates[row][col] = "normal";
+      newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 2) + 7];
+    }
+    boxTypes.current = newBoxTypes;
+    boxStates.current = newBoxStates;
   };
 
   const dropBoxes = () => {
