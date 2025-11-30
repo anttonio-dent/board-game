@@ -3,7 +3,6 @@
 import { Box } from "./box";
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { stat } from "fs";
 
 // Define the colors for our tiles
 const TYPES = [
