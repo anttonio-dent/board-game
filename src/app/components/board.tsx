@@ -50,11 +50,10 @@ const isNormalType = (type: string) => {
 };
 
 export const Board = () => {
-  const boxTypes = useRef<string[][]>([]);
-  const boxStates = useRef<string[][]>([]);
-  const boxOffsets = useRef<number[][]>([]);
+  const [boxTypes, setBoxTypes] = useState<string[][]>([]);
+  const [boxStates, setBoxStates] = useState<string[][]>([]);
+  const [boxOffsets, setBoxOffsets] = useState<number[][]>([]);
   const selectedBoxes = useRef<[number, number, string][]>([]);
-  const currentBox = useRef<[number, number, string]>([0, 0, ""]);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [state, setState] = useState<string>("");
   const [score, setScore] = useState<number>(0);
@@ -120,7 +119,7 @@ export const Board = () => {
         );
       attempts++;
     } while (hasMatches(newBoxTypes) && attempts < 50);
-    boxTypes.current = newBoxTypes;
+    setBoxTypes(newBoxTypes);
   };
 
   const initializeBoxState = () => {
@@ -131,7 +130,7 @@ export const Board = () => {
           .fill(null)
           .map(() => "normal")
       );
-    boxStates.current = newBoxStates;
+    setBoxStates(newBoxStates);
   };
 
   const initializeBoxOffsets = () => {
@@ -142,7 +141,7 @@ export const Board = () => {
           .fill(null)
           .map(() => 0)
       );
-    boxOffsets.current = newBoxOffsets;
+    setBoxOffsets(newBoxOffsets);
   };
 
   const initializeBoard = () => {
@@ -226,7 +225,7 @@ export const Board = () => {
     } else if (state === "drop") {
       setTimeout(() => {
         initializeBoxOffsets();
-        const matches = findAllMatches(boxTypes.current);
+        const matches = findAllMatches(boxTypes);
         if (matches.size > 0) {
           // Chain reaction - more matches found
           const newBoxStates = Array(BOARD_SIZE)
@@ -240,10 +239,10 @@ export const Board = () => {
             const [r, c] = pos.split(",").map(Number);
             newBoxStates[r][c] = "explode";
           });
-          boxStates.current = newBoxStates;
+          setBoxStates(newBoxStates);
           selectedBoxes.current = Array.from(matches).map((pos) => {
             const [r, c] = pos.split(",").map(Number);
-            return [r, c, boxTypes.current[r][c]];
+            return [r, c, boxTypes[r][c]];
           });
           setScore((prev) => prev + matches.size * 10);
           setIsAnimating(true);
@@ -257,16 +256,18 @@ export const Board = () => {
         }
       }, 400);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   const checkSwapCreatesMatch = (
     r1: number,
     c1: number,
     r2: number,
-    c2: number
+    c2: number,
+    board: string[][]
   ): boolean => {
     // Create a copy of the board
-    const testBoard = boxTypes.current.map((row) => [...row]);
+    const testBoard = board.map((row) => [...row]);
     
     // Swap the tiles
     [testBoard[r1][c1], testBoard[r2][c2]] = [
@@ -296,12 +297,12 @@ export const Board = () => {
             .fill(null)
             .map(() => "normal")
         );
-      boxStates.current = newBoxStates;
+      setBoxStates(newBoxStates);
       return;
     }
 
     // Check if swap creates a match
-    if (!checkSwapCreatesMatch(r1, c1, r2, c2)) {
+    if (!checkSwapCreatesMatch(r1, c1, r2, c2, boxTypes)) {
       setSelectedTile(null);
       setSwappingTiles(null);
       const newBoxStates = Array(BOARD_SIZE)
@@ -311,7 +312,7 @@ export const Board = () => {
             .fill(null)
             .map(() => "normal")
         );
-      boxStates.current = newBoxStates;
+      setBoxStates(newBoxStates);
       return;
     }
 
@@ -326,17 +327,19 @@ export const Board = () => {
       );
     newBoxStates[r1][c1] = "swap";
     newBoxStates[r2][c2] = "swap";
-    boxStates.current = newBoxStates;
+    setBoxStates(newBoxStates);
     setIsAnimating(true);
 
     // Perform the swap after animation
     setTimeout(() => {
-      const temp = boxTypes.current[r1][c1];
-      boxTypes.current[r1][c1] = boxTypes.current[r2][c2];
-      boxTypes.current[r2][c2] = temp;
+      const newBoxTypes = boxTypes.map((row) => [...row]);
+      const temp = newBoxTypes[r1][c1];
+      newBoxTypes[r1][c1] = newBoxTypes[r2][c2];
+      newBoxTypes[r2][c2] = temp;
+      setBoxTypes(newBoxTypes);
 
       // Find all matches after swap
-      const matches = findAllMatches(boxTypes.current);
+      const matches = findAllMatches(newBoxTypes);
       const finalBoxStates = Array(BOARD_SIZE)
         .fill(null)
         .map(() =>
@@ -350,10 +353,10 @@ export const Board = () => {
         finalBoxStates[r][c] = "explode";
       });
 
-      boxStates.current = finalBoxStates;
+      setBoxStates(finalBoxStates);
       selectedBoxes.current = Array.from(matches).map((pos) => {
         const [r, c] = pos.split(",").map(Number);
-        return [r, c, boxTypes.current[r][c]];
+        return [r, c, newBoxTypes[r][c]];
       });
 
       setScore((prev) => prev + matches.size * 10);
@@ -364,12 +367,17 @@ export const Board = () => {
 
 
   const addItems = () => {
-    const [row, col, type] = currentBox.current;
-    const newBoxTypes = [...boxTypes.current];
-    const newBoxStates = [...boxStates.current];
+    if (selectedBoxes.current.length === 0) return;
+    
+    // Use the first selected box as the center
+    const [row, col, type] = selectedBoxes.current[0];
+    const newBoxTypes = boxTypes.map((row) => [...row]);
+    const newBoxStates = boxStates.map((row) => [...row]);
+    
     if (isBomb(type)) {
       return;
     }
+    
     if (selectedBoxes.current.length >= 9) {
       newBoxStates[row][col] = "normal";
       if (type === "red") newBoxTypes[row][col] = "red-magnet";
@@ -385,14 +393,14 @@ export const Board = () => {
       newBoxStates[row][col] = "normal";
       newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 2) + 7];
     }
-    boxTypes.current = newBoxTypes;
-    boxStates.current = newBoxStates;
+    setBoxTypes(newBoxTypes);
+    setBoxStates(newBoxStates);
   };
 
   const dropBoxes = () => {
-    const newBoxTypes = [...boxTypes.current];
-    const newBoxStates = [...boxStates.current];
-    const newBoxOffsets = [...boxOffsets.current];
+    const newBoxTypes = boxTypes.map((row) => [...row]);
+    const newBoxStates = boxStates.map((row) => [...row]);
+    const newBoxOffsets = boxOffsets.map((row) => [...row]);
 
     for (let col = 0; col < BOARD_SIZE; col++) {
       let lastRow = -1;
@@ -412,18 +420,16 @@ export const Board = () => {
             newBoxStates[row][col] = "drop";
           } else {
             if (lastRow == -1) lastRow = row;
-            newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 4)];
+            newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 6)];
             newBoxOffsets[row][col] = 56 * lastRow + 56;
             newBoxStates[row][col] = "new";
           }
         }
       }
     }
-    console.log(newBoxTypes);
-    console.log(newBoxStates);
-    boxTypes.current = newBoxTypes;
-    boxStates.current = newBoxStates;
-    boxOffsets.current = newBoxOffsets;
+    setBoxTypes(newBoxTypes);
+    setBoxStates(newBoxStates);
+    setBoxOffsets(newBoxOffsets);
   };
 
   const handleBoxClick = (row: number, col: number) => {
@@ -442,7 +448,7 @@ export const Board = () => {
             .map(() => "normal")
         );
       newBoxStates[row][col] = "select";
-      boxStates.current = newBoxStates;
+      setBoxStates(newBoxStates);
     } else {
       const [selectedRow, selectedCol] = selectedTile;
       if (selectedRow === row && selectedCol === col) {
@@ -455,7 +461,7 @@ export const Board = () => {
               .fill(null)
               .map(() => "normal")
           );
-        boxStates.current = newBoxStates;
+        setBoxStates(newBoxStates);
       } else {
         // Try to swap
         swapTiles(selectedRow, selectedCol, row, col);
@@ -481,7 +487,7 @@ export const Board = () => {
       </div>
       <div className="board-container relative z-10">
         <div className="grid grid-cols-8 gap-2 w-max h-max">
-          {boxTypes.current.map((row, rowIndex) =>
+          {boxTypes.length > 0 && boxTypes.map((row, rowIndex) =>
             row.map((color, colIndex) => {
               const isSelected =
                 selectedTile &&
@@ -501,10 +507,10 @@ export const Board = () => {
                       ? "select"
                       : isSwapping
                       ? "swap"
-                      : boxStates.current[rowIndex][colIndex]
+                      : (boxStates[rowIndex] && boxStates[rowIndex][colIndex]) || "normal"
                   }
                   key={`${rowIndex}-${colIndex}`}
-                  offset={boxOffsets.current[rowIndex][colIndex]}
+                  offset={(boxOffsets[rowIndex] && boxOffsets[rowIndex][colIndex]) || 0}
                   onClick={() => handleBoxClick(rowIndex, colIndex)}
                 />
               );
