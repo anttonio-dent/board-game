@@ -23,31 +23,7 @@ const TYPES = [
   "pink-magnet",
 ];
 
-const BOARD_SIZE = 8;
-
-const isBomb = (type: string) => {
-  if (
-    type === "red" ||
-    type === "blue" ||
-    type === "green" ||
-    type === "yellow" ||
-    type === "purple" ||
-    type === "pink"
-  )
-    return false;
-  return true;
-};
-
-const isNormalType = (type: string) => {
-  return (
-    type === "red" ||
-    type === "blue" ||
-    type === "green" ||
-    type === "yellow" ||
-    type === "purple" ||
-    type === "pink"
-  );
-};
+const BOARD_SIZE = 10;
 
 export const Board = () => {
   const [boxTypes, setBoxTypes] = useState<string[][]>([]);
@@ -57,68 +33,49 @@ export const Board = () => {
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [state, setState] = useState<string>("");
   const [score, setScore] = useState<number>(0);
-  const [selectedTile, setSelectedTile] = useState<[number, number] | null>(null);
-  const [swappingTiles, setSwappingTiles] = useState<[[number, number], [number, number]] | null>(null);
 
-  const hasMatches = (board: string[][]): boolean => {
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      for (let col = 0; col < BOARD_SIZE; col++) {
-        const type = board[row][col];
-        if (!isNormalType(type)) continue;
-
-        // Check horizontal match
-        if (col >= 2) {
-          if (
-            board[row][col - 2] === type &&
-            board[row][col - 1] === type
-          ) {
-            return true;
-          }
-        }
-        if (col <= BOARD_SIZE - 3) {
-          if (
-            board[row][col + 1] === type &&
-            board[row][col + 2] === type
-          ) {
-            return true;
-          }
-        }
-
-        // Check vertical match
-        if (row >= 2) {
-          if (
-            board[row - 2][col] === type &&
-            board[row - 1][col] === type
-          ) {
-            return true;
-          }
-        }
-        if (row <= BOARD_SIZE - 3) {
-          if (
-            board[row + 1][col] === type &&
-            board[row + 2][col] === type
-          ) {
-            return true;
-          }
-        }
+  const findAdjacentSameColor = (row: number, col: number, color: string): Set<string> => {
+    const visited = new Set<string>();
+    const toBreak = new Set<string>();
+    
+    const dfs = (r: number, c: number) => {
+      const key = `${r},${c}`;
+      
+      // Check bounds
+      if (r < 0 || r >= BOARD_SIZE || c < 0 || c >= BOARD_SIZE) {
+        return;
       }
-    }
-    return false;
+      
+      // Check if already visited
+      if (visited.has(key)) {
+        return;
+      }
+      
+      // Check if same color
+      if (boxTypes[r] && boxTypes[r][c] === color) {
+        visited.add(key);
+        toBreak.add(key);
+        
+        // Check all 4 adjacent directions
+        dfs(r + 1, c); // down
+        dfs(r - 1, c); // up
+        dfs(r, c + 1); // right
+        dfs(r, c - 1); // left
+      }
+    };
+    
+    dfs(row, col);
+    return toBreak;
   };
 
   const initializeBoxStyle = () => {
-    let newBoxTypes: string[][];
-    let attempts = 0;
-    do {
-      newBoxTypes = Array(BOARD_SIZE)
-        .fill(null)
-        .map(() =>
-          Array(BOARD_SIZE)
-            .fill(null)
-            .map(() => TYPES[Math.floor(Math.random() * 6)])
-        );
-      attempts++;
-    } while (hasMatches(newBoxTypes) && attempts < 50);
+    const newBoxTypes = Array(BOARD_SIZE)
+      .fill(null)
+      .map(() =>
+        Array(BOARD_SIZE)
+          .fill(null)
+          .map(() => TYPES[Math.floor(Math.random() * 6)])
+      );
     setBoxTypes(newBoxTypes);
   };
 
@@ -150,174 +107,87 @@ export const Board = () => {
     initializeBoxOffsets();
     setIsAnimating(false);
     setScore(0);
-    setSelectedTile(null);
-    setSwappingTiles(null);
     if (state === "normal") setState("renormal");
     else setState("normal");
   };
 
-  const findAllMatches = (board: string[][]): Set<string> => {
-    const matches = new Set<string>();
+  const applyGravity = () => {
+    const newBoxTypes = boxTypes.map((row) => [...row]);
+    const newBoxOffsets = Array(BOARD_SIZE)
+      .fill(null)
+      .map(() => Array(BOARD_SIZE).fill(0));
+    const newBoxStates = Array(BOARD_SIZE)
+      .fill(null)
+      .map(() => Array(BOARD_SIZE).fill("normal"));
 
-    // Check horizontal matches
-    for (let row = 0; row < BOARD_SIZE; row++) {
-      let count = 1;
-      let currentType = board[row][0];
-      for (let col = 1; col < BOARD_SIZE; col++) {
-        if (board[row][col] === currentType && isNormalType(currentType)) {
-          count++;
-        } else {
-          if (count >= 3 && isNormalType(currentType)) {
-            for (let c = col - count; c < col; c++) {
-              matches.add(`${row},${c}`);
-            }
-          }
-          count = 1;
-          currentType = board[row][col];
-        }
-      }
-      if (count >= 3 && isNormalType(currentType)) {
-        for (let c = BOARD_SIZE - count; c < BOARD_SIZE; c++) {
-          matches.add(`${row},${c}`);
-        }
-      }
-    }
-
-    // Check vertical matches
+    // For each column, move boxes down
     for (let col = 0; col < BOARD_SIZE; col++) {
-      let count = 1;
-      let currentType = board[0][col];
-      for (let row = 1; row < BOARD_SIZE; row++) {
-        if (board[row][col] === currentType && isNormalType(currentType)) {
-          count++;
-        } else {
-          if (count >= 3 && isNormalType(currentType)) {
-            for (let r = row - count; r < row; r++) {
-              matches.add(`${r},${col}`);
-            }
+      let writeIndex = BOARD_SIZE - 1; // Start from bottom
+      
+      // First, move all non-exploded boxes down
+      for (let row = BOARD_SIZE - 1; row >= 0; row--) {
+        if (boxStates[row] && boxStates[row][col] !== "explode" && newBoxTypes[row][col]) {
+          if (writeIndex !== row) {
+            // Calculate offset for animation
+            newBoxOffsets[writeIndex][col] = 56 * (row - writeIndex);
+            newBoxTypes[writeIndex][col] = newBoxTypes[row][col];
+            newBoxStates[writeIndex][col] = "drop";
+          } else {
+            newBoxStates[writeIndex][col] = "normal";
           }
-          count = 1;
-          currentType = board[row][col];
+          writeIndex--;
         }
       }
-      if (count >= 3 && isNormalType(currentType)) {
-        for (let r = BOARD_SIZE - count; r < BOARD_SIZE; r++) {
-          matches.add(`${r},${col}`);
-        }
+      
+      // Fill empty spaces at top with new boxes
+      for (let row = writeIndex; row >= 0; row--) {
+        newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 6)];
+        newBoxOffsets[row][col] = 56 * (writeIndex - row + 1);
+        newBoxStates[row][col] = "new";
       }
     }
 
-    return matches;
+    setBoxTypes(newBoxTypes);
+    setBoxOffsets(newBoxOffsets);
+    setBoxStates(newBoxStates);
   };
 
 
   useEffect(() => {
     if (state === "explode") {
+      // After explosion animation, apply gravity
       setTimeout(() => {
-        addItems();
-        setState("item");
-      }, 400);
-    } else if (state === "item") {
-      setTimeout(() => {
-        dropBoxes();
+        applyGravity();
         setState("drop");
       }, 400);
     } else if (state === "drop") {
+      // After drop animation, reset and check for more matches
       setTimeout(() => {
         initializeBoxOffsets();
-        const matches = findAllMatches(boxTypes);
-        if (matches.size > 0) {
-          // Chain reaction - more matches found
-          const newBoxStates = Array(BOARD_SIZE)
-            .fill(null)
-            .map(() =>
-              Array(BOARD_SIZE)
-                .fill(null)
-                .map(() => "normal")
-            );
-          matches.forEach((pos) => {
-            const [r, c] = pos.split(",").map(Number);
-            newBoxStates[r][c] = "explode";
-          });
-          setBoxStates(newBoxStates);
-          selectedBoxes.current = Array.from(matches).map((pos) => {
-            const [r, c] = pos.split(",").map(Number);
-            return [r, c, boxTypes[r][c]];
-          });
-          setScore((prev) => prev + matches.size * 10);
-          setIsAnimating(true);
-          setState("explode");
-        } else {
-          initializeBoxState();
-          setState("normal");
-          setIsAnimating(false);
-          selectedBoxes.current = [];
-          setSwappingTiles(null);
-        }
+        initializeBoxState();
+        setState("normal");
+        setIsAnimating(false);
+        selectedBoxes.current = [];
       }, 400);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  const checkSwapCreatesMatch = (
-    r1: number,
-    c1: number,
-    r2: number,
-    c2: number,
-    board: string[][]
-  ): boolean => {
-    // Create a copy of the board
-    const testBoard = board.map((row) => [...row]);
-    
-    // Swap the tiles
-    [testBoard[r1][c1], testBoard[r2][c2]] = [
-      testBoard[r2][c2],
-      testBoard[r1][c1],
-    ];
-
-    // Check if this creates any matches
-    const matches = findAllMatches(testBoard);
-    return matches.size > 0;
-  };
-
-  const swapTiles = (r1: number, c1: number, r2: number, c2: number) => {
+  const breakBoxes = (row: number, col: number) => {
     if (isAnimating) return;
+    if (!boxTypes[row] || !boxTypes[row][col]) return;
 
-    // Check if tiles are adjacent
-    const isAdjacent =
-      (Math.abs(r1 - r2) === 1 && c1 === c2) ||
-      (Math.abs(c1 - c2) === 1 && r1 === r2);
+    const color = boxTypes[row][col];
+    const boxesToBreak = findAdjacentSameColor(row, col, color);
 
-    if (!isAdjacent) {
-      setSelectedTile(null);
-      const newBoxStates = Array(BOARD_SIZE)
-        .fill(null)
-        .map(() =>
-          Array(BOARD_SIZE)
-            .fill(null)
-            .map(() => "normal")
-        );
-      setBoxStates(newBoxStates);
+    // Need at least 2 boxes (the clicked one + at least one neighbor)
+    if (boxesToBreak.size < 2) {
       return;
     }
 
-    // Check if swap creates a match
-    if (!checkSwapCreatesMatch(r1, c1, r2, c2, boxTypes)) {
-      setSelectedTile(null);
-      setSwappingTiles(null);
-      const newBoxStates = Array(BOARD_SIZE)
-        .fill(null)
-        .map(() =>
-          Array(BOARD_SIZE)
-            .fill(null)
-            .map(() => "normal")
-        );
-      setBoxStates(newBoxStates);
-      return;
-    }
-
-    // Show swap animation
-    setSwappingTiles([[r1, c1], [r2, c2]]);
+    setIsAnimating(true);
+    
+    // Mark boxes for explosion
     const newBoxStates = Array(BOARD_SIZE)
       .fill(null)
       .map(() =>
@@ -325,148 +195,29 @@ export const Board = () => {
           .fill(null)
           .map(() => "normal")
       );
-    newBoxStates[r1][c1] = "swap";
-    newBoxStates[r2][c2] = "swap";
+
+    boxesToBreak.forEach((pos) => {
+      const [r, c] = pos.split(",").map(Number);
+      newBoxStates[r][c] = "explode";
+    });
+
     setBoxStates(newBoxStates);
-    setIsAnimating(true);
+    selectedBoxes.current = Array.from(boxesToBreak).map((pos) => {
+      const [r, c] = pos.split(",").map(Number);
+      return [r, c, boxTypes[r][c]];
+    });
 
-    // Perform the swap after animation
-    setTimeout(() => {
-      const newBoxTypes = boxTypes.map((row) => [...row]);
-      const temp = newBoxTypes[r1][c1];
-      newBoxTypes[r1][c1] = newBoxTypes[r2][c2];
-      newBoxTypes[r2][c2] = temp;
-      setBoxTypes(newBoxTypes);
-
-      // Find all matches after swap
-      const matches = findAllMatches(newBoxTypes);
-      const finalBoxStates = Array(BOARD_SIZE)
-        .fill(null)
-        .map(() =>
-          Array(BOARD_SIZE)
-            .fill(null)
-            .map(() => "normal")
-        );
-
-      matches.forEach((pos) => {
-        const [r, c] = pos.split(",").map(Number);
-        finalBoxStates[r][c] = "explode";
-      });
-
-      setBoxStates(finalBoxStates);
-      selectedBoxes.current = Array.from(matches).map((pos) => {
-        const [r, c] = pos.split(",").map(Number);
-        return [r, c, newBoxTypes[r][c]];
-      });
-
-      setScore((prev) => prev + matches.size * 10);
-      setState("explode");
-      setSelectedTile(null);
-    }, 300);
+    setScore((prev) => prev + boxesToBreak.size * 10);
+    setState("explode");
   };
 
 
-  const addItems = () => {
-    if (selectedBoxes.current.length === 0) return;
-    
-    // Use the first selected box as the center
-    const [row, col, type] = selectedBoxes.current[0];
-    const newBoxTypes = boxTypes.map((row) => [...row]);
-    const newBoxStates = boxStates.map((row) => [...row]);
-    
-    if (isBomb(type)) {
-      return;
-    }
-    
-    if (selectedBoxes.current.length >= 9) {
-      newBoxStates[row][col] = "normal";
-      if (type === "red") newBoxTypes[row][col] = "red-magnet";
-      if (type === "blue") newBoxTypes[row][col] = "blue-magnet";
-      if (type === "green") newBoxTypes[row][col] = "green-magnet";
-      if (type === "yellow") newBoxTypes[row][col] = "yellow-magnet";
-      if (type === "purple") newBoxTypes[row][col] = "purple-magnet";
-      if (type === "pink") newBoxTypes[row][col] = "pink-magnet";
-    } else if (selectedBoxes.current.length >= 7) {
-      newBoxStates[row][col] = "normal";
-      newBoxTypes[row][col] = "bomb";
-    } else if (selectedBoxes.current.length >= 5) {
-      newBoxStates[row][col] = "normal";
-      newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 2) + 7];
-    }
-    setBoxTypes(newBoxTypes);
-    setBoxStates(newBoxStates);
-  };
-
-  const dropBoxes = () => {
-    const newBoxTypes = boxTypes.map((row) => [...row]);
-    const newBoxStates = boxStates.map((row) => [...row]);
-    const newBoxOffsets = boxOffsets.map((row) => [...row]);
-
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      let lastRow = -1;
-      for (let row = BOARD_SIZE - 1; row >= 0; row--) {
-        if (newBoxStates[row][col] === "explode") {
-          let firstRow = -1;
-          for (let newRow = row - 1; newRow >= 0; newRow--) {
-            if (newBoxStates[newRow][col] === "normal") {
-              firstRow = newRow;
-              break;
-            }
-          }
-          if (firstRow !== -1) {
-            newBoxStates[firstRow][col] = "explode";
-            newBoxTypes[row][col] = newBoxTypes[firstRow][col];
-            newBoxOffsets[row][col] = 56 * (row - firstRow);
-            newBoxStates[row][col] = "drop";
-          } else {
-            if (lastRow == -1) lastRow = row;
-            newBoxTypes[row][col] = TYPES[Math.floor(Math.random() * 6)];
-            newBoxOffsets[row][col] = 56 * lastRow + 56;
-            newBoxStates[row][col] = "new";
-          }
-        }
-      }
-    }
-    setBoxTypes(newBoxTypes);
-    setBoxStates(newBoxStates);
-    setBoxOffsets(newBoxOffsets);
-  };
 
   const handleBoxClick = (row: number, col: number) => {
     if (isAnimating) {
       return;
     }
-
-    if (selectedTile === null) {
-      // First tile selected
-      setSelectedTile([row, col]);
-      const newBoxStates = Array(BOARD_SIZE)
-        .fill(null)
-        .map(() =>
-          Array(BOARD_SIZE)
-            .fill(null)
-            .map(() => "normal")
-        );
-      newBoxStates[row][col] = "select";
-      setBoxStates(newBoxStates);
-    } else {
-      const [selectedRow, selectedCol] = selectedTile;
-      if (selectedRow === row && selectedCol === col) {
-        // Clicked the same tile - deselect
-        setSelectedTile(null);
-        const newBoxStates = Array(BOARD_SIZE)
-          .fill(null)
-          .map(() =>
-            Array(BOARD_SIZE)
-              .fill(null)
-              .map(() => "normal")
-          );
-        setBoxStates(newBoxStates);
-      } else {
-        // Try to swap
-        swapTiles(selectedRow, selectedCol, row, col);
-      }
-    }
+    breakBoxes(row, col);
   };
 
   useEffect(() => {
@@ -482,33 +233,17 @@ export const Board = () => {
           Score: <span className="text-[var(--box-blue-normal)]">{score}</span>
         </div>
         <p className="text-sm text-[var(--foreground-dark)] mt-2">
-          Click two adjacent tiles to swap them
+          Click a box to break all adjacent boxes of the same color
         </p>
       </div>
       <div className="board-container relative z-10">
-        <div className="grid grid-cols-8 gap-2 w-max h-max">
+        <div className="grid grid-cols-10 gap-2 w-max h-max">
           {boxTypes.length > 0 && boxTypes.map((row, rowIndex) =>
             row.map((color, colIndex) => {
-              const isSelected =
-                selectedTile &&
-                selectedTile[0] === rowIndex &&
-                selectedTile[1] === colIndex;
-              const isSwapping =
-                swappingTiles &&
-                ((swappingTiles[0][0] === rowIndex &&
-                  swappingTiles[0][1] === colIndex) ||
-                  (swappingTiles[1][0] === rowIndex &&
-                    swappingTiles[1][1] === colIndex));
               return (
                 <Box
                   type={color}
-                  state={
-                    isSelected
-                      ? "select"
-                      : isSwapping
-                      ? "swap"
-                      : (boxStates[rowIndex] && boxStates[rowIndex][colIndex]) || "normal"
-                  }
+                  state={(boxStates[rowIndex] && boxStates[rowIndex][colIndex]) || "normal"}
                   key={`${rowIndex}-${colIndex}`}
                   offset={(boxOffsets[rowIndex] && boxOffsets[rowIndex][colIndex]) || 0}
                   onClick={() => handleBoxClick(rowIndex, colIndex)}
