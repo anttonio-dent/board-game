@@ -211,110 +211,6 @@ export const Board = () => {
     return matches;
   };
 
-  const findConnectedBoxes = (row: number, col: number, type: string) => {
-    const visited = new Set<string>();
-    const connected: [number, number, string][] = [];
-
-    if (!isBomb(type)) {
-      const dfs = (r: number, c: number) => {
-        if (
-          r < 0 ||
-          r >= BOARD_SIZE ||
-          c < 0 ||
-          c >= BOARD_SIZE ||
-          visited.has(`${r},${c}`) ||
-          boxTypes.current[r][c] !== type
-        ) {
-          return;
-        }
-
-        visited.add(`${r},${c}`);
-        connected.push([r, c, boxTypes.current[r][c]]);
-
-        dfs(r + 1, c);
-        dfs(r - 1, c);
-        dfs(r, c + 1);
-        dfs(r, c - 1);
-      };
-
-      dfs(row, col);
-    } else {
-      const dfs = (r: number, c: number) => {
-        if (
-          r < 0 ||
-          r >= BOARD_SIZE ||
-          c < 0 ||
-          c >= BOARD_SIZE ||
-          visited.has(`${r},${c}`) ||
-          !isBomb(boxTypes.current[r][c])
-        ) {
-          return;
-        }
-
-        visited.add(`${r},${c}`);
-        connected.push([r, c, boxTypes.current[r][c]]);
-
-        dfs(r + 1, c);
-        dfs(r - 1, c);
-        dfs(r, c + 1);
-        dfs(r, c - 1);
-      };
-
-      dfs(row, col);
-
-      const newconnected: [number, number, string][] = [];
-
-      connected.forEach(([row, col, newtype]) => {
-        if (newtype === "bomb") {
-          for (let r = row - 1; r <= row + 1; r++)
-            for (let c = col - 1; c <= col + 1; c++)
-              if (
-                r >= 0 &&
-                r < BOARD_SIZE &&
-                c >= 0 &&
-                c < BOARD_SIZE &&
-                !visited.has(`${r},${c}`)
-              ) {
-                visited.add(`${r},${c}`);
-                newconnected.push([r, c, boxTypes.current[r][c]]);
-              }
-        }
-        if (newtype === "h-rocket") {
-          const r = row;
-          for (let c = 0; c < BOARD_SIZE; c++)
-            if (
-              r >= 0 &&
-              r < BOARD_SIZE &&
-              c >= 0 &&
-              c < BOARD_SIZE &&
-              !visited.has(`${r},${c}`)
-            ) {
-              visited.add(`${r},${c}`);
-              newconnected.push([r, c, boxTypes.current[r][c]]);
-            }
-        }
-        if (newtype === "v-rocket") {
-          const c = col;
-          for (let r = 0; r < BOARD_SIZE; r++)
-            if (
-              r >= 0 &&
-              r < BOARD_SIZE &&
-              c >= 0 &&
-              c < BOARD_SIZE &&
-              !visited.has(`${r},${c}`)
-            ) {
-              visited.add(`${r},${c}`);
-              newconnected.push([r, c, boxTypes.current[r][c]]);
-            }
-        }
-      });
-
-      newconnected.forEach((connection) => {
-        connected.push(connection);
-      });
-    }
-    return connected;
-  };
 
   useEffect(() => {
     if (state === "explode") {
@@ -466,21 +362,6 @@ export const Board = () => {
     }, 300);
   };
 
-  const explodeBoxes = () => {
-    const newBoxStates = Array(BOARD_SIZE)
-      .fill(null)
-      .map(() =>
-        Array(BOARD_SIZE)
-          .fill(null)
-          .map(() => "normal")
-      );
-    selectedBoxes.current.forEach(([r, c]) => {
-      newBoxStates[r][c] = "explode";
-    });
-    boxStates.current = newBoxStates;
-    setIsAnimating(true);
-    setState("explode");
-  };
 
   const addItems = () => {
     const [row, col, type] = currentBox.current;
@@ -584,6 +465,7 @@ export const Board = () => {
 
   useEffect(() => {
     initializeBoard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

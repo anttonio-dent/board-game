@@ -132,6 +132,7 @@ export const Box: React.FC<BoxProps> = ({
         controls.start({ opacity: 1, scale: 1 }, { duration: 0.3, type: "spring" });
       }, 50);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, offset]);
 
   return (
