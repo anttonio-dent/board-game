@@ -14,42 +14,46 @@ import {
 } from "lucide-react";
 
 const boxStyle = (type: string) => {
+  const baseStyle = "relative flex items-center justify-center w-12 h-12 border-none rounded-lg cursor-pointer transition-all duration-200";
+  const shadowStyle = "shadow-[0_6px_0_rgba(0,0,0,0.3),0_8px_16px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2)]";
+  
   switch (type) {
     case "red":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-red-normal)] cursor-pointer shadow-[0_4px_0_var(--box-red-dark)]";
+      return `${baseStyle} bg-gradient-to-br from-[#ff4d5a] via-[var(--box-red-normal)] to-[var(--box-red-dark)] ${shadowStyle}`;
     case "green":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-green-normal)] cursor-pointer shadow-[0_4px_0_var(--box-green-dark)]";
+      return `${baseStyle} bg-gradient-to-br from-[#68d391] via-[var(--box-green-normal)] to-[var(--box-green-dark)] ${shadowStyle}`;
     case "blue":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-blue-normal)] cursor-pointer shadow-[0_4px_0_var(--box-blue-dark)]";
+      return `${baseStyle} bg-gradient-to-br from-[#60a5fa] via-[var(--box-blue-normal)] to-[var(--box-blue-dark)] ${shadowStyle}`;
     case "pink":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-pink-normal)] cursor-pointer shadow-[0_4px_0_var(--box-pink-dark)]";
+      return `${baseStyle} bg-gradient-to-br from-[#f472b6] via-[var(--box-pink-normal)] to-[var(--box-pink-dark)] ${shadowStyle}`;
     case "purple":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-purple-normal)] cursor-pointer shadow-[0_4px_0_var(--box-purple-dark)]";
+      return `${baseStyle} bg-gradient-to-br from-[#c084fc] via-[var(--box-purple-normal)] to-[var(--box-purple-dark)] ${shadowStyle}`;
     case "yellow":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded bg-[var(--box-yellow-normal)] cursor-pointer shadow-[0_4px_0_var(--box-yellow-dark)]";
+      return `${baseStyle} bg-gradient-to-br from-[#fcd34d] via-[var(--box-yellow-normal)] to-[var(--box-yellow-dark)] ${shadowStyle}`;
     case "v-rocket":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#5a6678] via-[var(--box-black-normal)] to-[var(--box-black-dark)] ${shadowStyle}`;
     case "h-rocket":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-black-normal)] cursor-pointer shadow-[0_4px_0_var(--box-black-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#5a6678] via-[var(--box-black-normal)] to-[var(--box-black-dark)] ${shadowStyle}`;
     case "bomb":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-gray-normal)] cursor-pointer shadow-[0_4px_0_var(--box-gray-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#6fa8a5] via-[var(--box-gray-normal)] to-[var(--box-gray-dark)] ${shadowStyle}`;
     case "red-magnet":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-red-normal)] cursor-pointer shadow-[0_4px_0_var(--box-red-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#ff4d5a] via-[var(--box-red-normal)] to-[var(--box-red-dark)] ${shadowStyle} ring-2 ring-[#ff4d5a] ring-opacity-50`;
     case "green-magnet":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-green-normal)] cursor-pointer shadow-[0_4px_0_var(--box-green-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#68d391] via-[var(--box-green-normal)] to-[var(--box-green-dark)] ${shadowStyle} ring-2 ring-[#68d391] ring-opacity-50`;
     case "blue-magnet":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-blue-normal)] cursor-pointer shadow-[0_4px_0_var(--box-blue-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#60a5fa] via-[var(--box-blue-normal)] to-[var(--box-blue-dark)] ${shadowStyle} ring-2 ring-[#60a5fa] ring-opacity-50`;
     case "pink-magnet":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-pink-normal)] cursor-pointer shadow-[0_4px_0_var(--box-pink-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#f472b6] via-[var(--box-pink-normal)] to-[var(--box-pink-dark)] ${shadowStyle} ring-2 ring-[#f472b6] ring-opacity-50`;
     case "purple-magnet":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-purple-normal)] cursor-pointer shadow-[0_4px_0_var(--box-purple-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#c084fc] via-[var(--box-purple-normal)] to-[var(--box-purple-dark)] ${shadowStyle} ring-2 ring-[#c084fc] ring-opacity-50`;
     case "yellow-magnet":
-      return "relative flex items-center justify-center w-10 h-10 border-none rounded-full bg-[var(--box-yellow-normal)] cursor-pointer shadow-[0_4px_0_var(--box-yellow-dark)]";
+      return `${baseStyle} rounded-full bg-gradient-to-br from-[#fcd34d] via-[var(--box-yellow-normal)] to-[var(--box-yellow-dark)] ${shadowStyle} ring-2 ring-[#fcd34d] ring-opacity-50`;
   }
   return "";
 };
 
 const frameStyle = (type: string) => {
+  const baseFrame = "absolute top-[-3px] left-[-3px] w-[52px] h-[52px] border-[3px] border-white cursor-pointer shadow-[0_0_12px_rgba(255,255,255,0.6),inset_0_0_8px_rgba(255,255,255,0.3)]";
   if (
     type === "red" ||
     type === "green" ||
@@ -58,8 +62,8 @@ const frameStyle = (type: string) => {
     type === "purple" ||
     type === "yellow"
   )
-    return "absolute top-[-2px] left-[-2px] w-11 h-12 border-2 border-white cursor-pointer rounded-lg";
-  return "absolute top-[-2px] left-[-2px] w-11 h-12 border-2 border-white cursor-pointer rounded-full";
+    return `${baseFrame} rounded-lg`;
+  return `${baseFrame} rounded-full`;
 };
 
 interface BoxProps {
@@ -90,28 +94,65 @@ export const Box: React.FC<BoxProps> = ({
 
   useEffect(() => {
     if (state === "select") {
-      controls.start({ y: -3 });
-      frameControls.start({ opacity: 1 });
+      controls.start({ 
+        y: -6, 
+        scale: 1.1,
+        rotate: [0, -2, 2, -2, 2, 0],
+        filter: "brightness(1.2) drop-shadow(0 8px 16px rgba(0,0,0,0.5))"
+      });
+      frameControls.start({ opacity: 1, scale: 1.05 });
+    } else if (state === "swap") {
+      controls.start({ 
+        scale: 1.2,
+        rotate: [0, 180, 360],
+        filter: "brightness(1.3) drop-shadow(0 0 20px currentColor)"
+      }, { duration: 0.3 });
     } else if (state === "normal") {
-      controls.start({ y: 0, scale: 1, opacity: 1 });
-      frameControls.start({ opacity: 0 });
+      controls.start({ 
+        y: 0, 
+        scale: 1, 
+        opacity: 1,
+        rotate: 0,
+        filter: "brightness(1) drop-shadow(0 6px 0 rgba(0,0,0,0.3))"
+      });
+      frameControls.start({ opacity: 0, scale: 1 });
     } else if (state === "explode") {
-      controls.start({ opacity: 0, scale: 1.5 });
-      frameControls.start({ opacity: 0 });
+      controls.start({ 
+        opacity: 0, 
+        scale: 1.8,
+        rotate: 360,
+        filter: "brightness(1.5) drop-shadow(0 0 20px currentColor)"
+      });
+      frameControls.start({ opacity: 0, scale: 1.5 });
     } else if (state === "drop") {
-      controls.start({ y: -offset, opacity: 1, scale: 1 }, { duration: 0 });
+      controls.start({ y: -offset, opacity: 1, scale: 1, rotate: 0 }, { duration: 0 });
     } else if (state === "new") {
-      controls.start({ y: -offset, opacity: 0, scale: 1 }, { duration: 0 });
+      controls.start({ y: -offset, opacity: 0, scale: 0.5, rotate: 0 }, { duration: 0 });
+      setTimeout(() => {
+        controls.start({ opacity: 1, scale: 1 }, { duration: 0.3, type: "spring" });
+      }, 50);
     }
-  }, [state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, offset]);
 
   return (
     <motion.div
       className={boxStyle(type)}
       animate={controls}
       onClick={handleClick}
-      whileHover={state === "normal" ? { y: -3 } : {}}
-      whileTap={state === "normal" ? { y: -1 } : {}}
+      whileHover={state === "normal" ? { 
+        y: -4, 
+        scale: 1.05,
+        filter: "brightness(1.15) drop-shadow(0 8px 12px rgba(0,0,0,0.4))"
+      } : {}}
+      whileTap={state === "normal" ? { 
+        y: -2, 
+        scale: 0.98,
+        filter: "brightness(0.95)"
+      } : {}}
+      style={{
+        transformStyle: "preserve-3d",
+      }}
     >
       {(() => {
         switch (type) {
