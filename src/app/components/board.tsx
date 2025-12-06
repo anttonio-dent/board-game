@@ -54,7 +54,6 @@ export const Board = () => {
   const [boxStates, setBoxStates] = useState<string[][]>([]);
   const [boxOffsets, setBoxOffsets] = useState<number[][]>([]);
   const selectedBoxes = useRef<[number, number, string][]>([]);
-  const currentBox = useRef<[number, number, string]>([0, 0, ""]);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [state, setState] = useState<string>("");
   const [score, setScore] = useState<number>(0);
